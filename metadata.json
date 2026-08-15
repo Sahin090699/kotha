@@ -1,0 +1,6 @@
+{
+  "name": "Kotha - Bengali Live Translator",
+  "description": "Real-Time Bengali ⇄ Language Speech Translator with voice preservation and code-switching support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
