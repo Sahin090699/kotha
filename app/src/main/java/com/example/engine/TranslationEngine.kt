@@ -37,8 +37,9 @@ interface TranslationEngine {
         echoTargetLanguage: Boolean = false
     ): Boolean
 
+    suspend fun startAudioConversation()
+    fun stopAudioConversation()
     suspend fun streamAudio(chunk: AudioChunk)
-
     suspend fun finishUtterance(totalAudioRecorded: ByteArray? = null)
 
     suspend fun translateTextDirect(

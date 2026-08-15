@@ -1,7 +1,6 @@
 package com.example
 
 import android.Manifest
-import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -20,13 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.screens.HistoryScreen
-import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.HostPairingScreen
 import com.example.ui.screens.JoinPairingScreen
 import com.example.ui.screens.LiveTranslateScreen
+import com.example.ui.screens.ProductionHomeScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.AppScreen
@@ -45,19 +45,26 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun KothaApp(viewModel: KothaViewModel) {
     val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
+    val hasMicConsent by viewModel.hasMicConsent.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> viewModel.setPrivacyConsent(granted) }
+    ) { granted ->
+        viewModel.setPrivacyConsent(granted)
+        if (!granted) {
+            viewModel.navigateTo(AppScreen.HOME)
+            viewModel.showPrivacyConsent()
+        }
+    }
 
-    LaunchedEffect(currentScreen) {
-        if (currentScreen == AppScreen.ACTIVE_TRANSLATE &&
-            ContextCompat.checkSelfPermission(
-                viewModel.getApplication<Application>(),
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    LaunchedEffect(currentScreen, hasMicConsent) {
+        if (currentScreen == AppScreen.ACTIVE_TRANSLATE && !hasMicConsent) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                viewModel.setPrivacyConsent(true)
+            } else {
+                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
         }
     }
 
@@ -71,7 +78,7 @@ fun KothaApp(viewModel: KothaViewModel) {
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         when (currentScreen) {
-            AppScreen.HOME -> HomeScreen(viewModel, Modifier.padding(innerPadding))
+            AppScreen.HOME -> ProductionHomeScreen(viewModel, Modifier.padding(innerPadding))
             AppScreen.HOST_PAIRING -> HostPairingScreen(viewModel, Modifier.padding(innerPadding))
             AppScreen.JOIN_PAIRING -> JoinPairingScreen(viewModel, Modifier.padding(innerPadding))
             AppScreen.ACTIVE_TRANSLATE -> LiveTranslateScreen(viewModel, Modifier.padding(innerPadding))
