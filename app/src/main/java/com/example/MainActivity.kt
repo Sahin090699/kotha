@@ -19,71 +19,101 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.screens.HistoryScreen
+import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.HostPairingScreen
 import com.example.ui.screens.JoinPairingScreen
 import com.example.ui.screens.LiveTranslateScreen
-import com.example.ui.screens.ProductionHomeScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.theme.CleanBackground
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.AppScreen
 import com.example.ui.viewmodel.KothaViewModel
 
 class MainActivity : ComponentActivity() {
+
     private val viewModel: KothaViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { MyApplicationTheme { KothaApp(viewModel) } }
+
+        setContent {
+            MyApplicationTheme {
+                KothaApp(viewModel = viewModel)
+            }
+        }
     }
 }
 
 @Composable
 fun KothaApp(viewModel: KothaViewModel) {
     val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
-    val hasMicConsent by viewModel.hasMicConsent.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
+    // Request RECORD_AUDIO runtime permission
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        viewModel.setPrivacyConsent(granted)
-        if (!granted) {
-            viewModel.navigateTo(AppScreen.HOME)
-            viewModel.showPrivacyConsent()
-        }
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.setPrivacyConsent(isGranted)
     }
 
-    LaunchedEffect(currentScreen, hasMicConsent) {
-        if (currentScreen == AppScreen.ACTIVE_TRANSLATE && !hasMicConsent) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                viewModel.setPrivacyConsent(true)
-            } else {
-                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-            }
-        }
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
+    // Handle System Back button
     BackHandler(enabled = currentScreen != AppScreen.HOME) {
-        if (currentScreen == AppScreen.ACTIVE_TRANSLATE) viewModel.endSession()
-        else viewModel.navigateTo(AppScreen.HOME)
+        when (currentScreen) {
+            AppScreen.ACTIVE_TRANSLATE -> viewModel.endSession()
+            else -> viewModel.navigateTo(AppScreen.HOME)
+        }
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         when (currentScreen) {
-            AppScreen.HOME -> ProductionHomeScreen(viewModel, Modifier.padding(innerPadding))
-            AppScreen.HOST_PAIRING -> HostPairingScreen(viewModel, Modifier.padding(innerPadding))
-            AppScreen.JOIN_PAIRING -> JoinPairingScreen(viewModel, Modifier.padding(innerPadding))
-            AppScreen.ACTIVE_TRANSLATE -> LiveTranslateScreen(viewModel, Modifier.padding(innerPadding))
-            AppScreen.HISTORY -> HistoryScreen(viewModel, Modifier.padding(innerPadding))
-            AppScreen.SETTINGS -> SettingsScreen(viewModel, Modifier.padding(innerPadding))
+            AppScreen.HOME -> {
+                HomeScreen(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            AppScreen.HOST_PAIRING -> {
+                HostPairingScreen(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            AppScreen.JOIN_PAIRING -> {
+                JoinPairingScreen(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            AppScreen.ACTIVE_TRANSLATE -> {
+                LiveTranslateScreen(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            AppScreen.HISTORY -> {
+                HistoryScreen(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            AppScreen.SETTINGS -> {
+                SettingsScreen(
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
         }
     }
 }

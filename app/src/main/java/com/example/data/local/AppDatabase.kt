@@ -19,11 +19,14 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
+                val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "kotha_database.db"
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration()
+                .build()
+                INSTANCE = instance
+                instance
             }
         }
     }
