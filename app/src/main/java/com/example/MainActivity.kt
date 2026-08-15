@@ -45,23 +45,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun KothaApp(viewModel: KothaViewModel) {
     val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
-    val hasMicConsent by viewModel.hasMicConsent.collectAsStateWithLifecycle()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> viewModel.setPrivacyConsent(granted) }
 
-    LaunchedEffect(currentScreen, hasMicConsent) {
-        if (currentScreen == AppScreen.ACTIVE_TRANSLATE && !hasMicConsent) {
-            if (ContextCompat.checkSelfPermission(
-                    viewModel.getApplication<Application>(),
-                    Manifest.permission.RECORD_AUDIO
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                viewModel.setPrivacyConsent(true)
-            } else {
-                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-            }
+    LaunchedEffect(currentScreen) {
+        if (currentScreen == AppScreen.ACTIVE_TRANSLATE &&
+            ContextCompat.checkSelfPermission(
+                viewModel.getApplication<Application>(),
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
