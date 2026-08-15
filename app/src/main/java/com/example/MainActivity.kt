@@ -1,10 +1,11 @@
 package com.example
 
 import android.Manifest
+import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
+import androidx.activity.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -37,9 +38,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
-            MyApplicationTheme { KothaApp(viewModel) }
-        }
+        setContent { MyApplicationTheme { KothaApp(viewModel) } }
     }
 }
 
@@ -52,8 +51,6 @@ fun KothaApp(viewModel: KothaViewModel) {
         ActivityResultContracts.RequestPermission()
     ) { granted -> viewModel.setPrivacyConsent(granted) }
 
-    // Do not request a sensitive permission on every app launch. Request it only when
-    // the user has explicitly entered a flow that needs microphone capture.
     LaunchedEffect(currentScreen, hasMicConsent) {
         if (currentScreen == AppScreen.ACTIVE_TRANSLATE && !hasMicConsent) {
             if (ContextCompat.checkSelfPermission(
@@ -69,10 +66,8 @@ fun KothaApp(viewModel: KothaViewModel) {
     }
 
     BackHandler(enabled = currentScreen != AppScreen.HOME) {
-        when (currentScreen) {
-            AppScreen.ACTIVE_TRANSLATE -> viewModel.endSession()
-            else -> viewModel.navigateTo(AppScreen.HOME)
-        }
+        if (currentScreen == AppScreen.ACTIVE_TRANSLATE) viewModel.endSession()
+        else viewModel.navigateTo(AppScreen.HOME)
     }
 
     Scaffold(
